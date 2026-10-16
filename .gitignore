@@ -1,0 +1,8 @@
+build/
+*.xcodeproj
+project.yml
+Sources/AppConfig.swift
+Resources/Assets.xcassets/AppIcon.appiconset/icon.png
+Resources/Assets.xcassets/LaunchBackground.colorset/Contents.json
+Resources/Assets.xcassets/Contents.json
+.DS_Store
