@@ -1,0 +1,29 @@
+# Codemagic build pipeline for Felapps-generated iOS apps.
+# The Felapps backend triggers this workflow through the Codemagic REST API.
+workflows:
+  ios-publish:
+    name: iOS Publish (TestFlight)
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: $BUNDLE_ID
+    scripts:
+      - name: Configure project
+        script: bash configure.sh
+      - name: Generate Xcode project
+        script: xcodegen generate
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Build and export IPA
+        script: |
+          set -e
+          xcode-project build-ipa \
+            --project "*.xcodeproj" \
+            --scheme "FelappApp"
+    publishing:
+      app_store_connect:
+        api_key: $APP_STORE_CONNECT_API_KEY
+        submit_to_test_flight: true
