@@ -7,22 +7,49 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       xcode: latest
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: $BUNDLE_ID
     scripts:
       - name: Configure project
         script: bash configure.sh
       - name: Generate Xcode project
         script: xcodegen generate
-      - name: Set up code signing
-        script: xcode-project use-profiles
-      - name: Build and export IPA
+      - name: Save Apple API key
+        script: printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$CM_BUILD_DIR/AuthKey.p8"
+      - name: Build and archive
         script: |
           set -e
-          xcode-project build-ipa \
-            --project "*.xcodeproj" \
-            --scheme "FelappApp"
+          xcodebuild -project "$(ls *.xcodeproj | head -1)" \
+            -scheme FelappApp \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$CM_BUILD_DIR/Felapp.xcarchive" \
+            archive \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$CM_BUILD_DIR/AuthKey.p8" \
+            -authenticationKeyID "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+      - name: Export IPA
+        script: |
+          set -e
+          cat > "$CM_BUILD_DIR/exportOptions.plist" <<'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>destination</key>
+            <string>export</string>
+          </dict>
+          </plist>
+          EOF
+          xcodebuild -exportArchive \
+            -archivePath "$CM_BUILD_DIR/Felapp.xcarchive" \
+            -exportPath "$CM_BUILD_DIR/ipa" \
+            -exportOptionsPlist "$CM_BUILD_DIR/exportOptions.plist" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$CM_BUILD_DIR/AuthKey.p8" \
+            -authenticationKeyID "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
+            -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
     publishing:
       app_store_connect:
         # Apple credentials are passed to the build by Felapps as secret environment variables.
