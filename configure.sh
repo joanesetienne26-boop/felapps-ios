@@ -17,10 +17,16 @@ SPLASH_BG_COLOR="${SPLASH_BG_COLOR:-#ffffff}"
 mkdir -p Sources "Resources/Assets.xcassets/AppIcon.appiconset" "Resources/Assets.xcassets/LaunchBackground.colorset"
 
 # App icon: uploaded icon from Felapps when provided, fallback icon otherwise.
-if [ -n "${ICON_PNG_BASE64:-}" ]; then
-  printf '%s' "$ICON_PNG_BASE64" | base64 --decode > "Resources/Assets.xcassets/AppIcon.appiconset/icon.png"
+ICON_PATH="Resources/Assets.xcassets/AppIcon.appiconset/icon.png"
+if [ -n "${ICON_URL:-}" ] && curl -fsSL --retry 3 "$ICON_URL" -o "$ICON_PATH"; then
+  echo "Downloaded app icon from Felapps"
+  # Apple rejects icons with transparency; flatten to a 1024x1024 opaque PNG.
+  sips -s format jpeg "$ICON_PATH" --out /tmp/icon.jpg >/dev/null && \
+    sips -s format png -z 1024 1024 /tmp/icon.jpg --out "$ICON_PATH" >/dev/null || true
+elif [ -n "${ICON_PNG_BASE64:-}" ]; then
+  printf '%s' "$ICON_PNG_BASE64" | base64 --decode > "$ICON_PATH"
 else
-  cp DefaultIcon.png "Resources/Assets.xcassets/AppIcon.appiconset/icon.png"
+  cp DefaultIcon.png "$ICON_PATH"
 fi
 
 cat > "Resources/Assets.xcassets/AppIcon.appiconset/Contents.json" <<'EOF'
