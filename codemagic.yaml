@@ -28,6 +28,7 @@ workflows:
           keychain initialize
           app-store-connect fetch-signing-files "$BUNDLE_ID" \
             --type IOS_APP_STORE \
+            --strict-match-identifier \
             --certificate-key=@file:/tmp/cert_key.pem \
             --create
           keychain add-certificates
