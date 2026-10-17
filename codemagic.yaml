@@ -11,7 +11,16 @@ workflows:
       - name: Configure project
         script: bash configure.sh
       - name: Generate Xcode project
-        script: xcodegen generate
+        script: |
+          set -e
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            echo "Installing XcodeGen..."
+            curl -fsSL -o /tmp/xcodegen.zip https://github.com/yonaskolb/XcodeGen/releases/latest/download/xcodegen.zip \
+              && unzip -q -o /tmp/xcodegen.zip -d /tmp/xcodegen \
+              && export PATH="/tmp/xcodegen/xcodegen/bin:$PATH" \
+              || brew install xcodegen
+          fi
+          xcodegen generate
       - name: Save Apple API key
         script: printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$CM_BUILD_DIR/AuthKey.p8"
       - name: Build and archive
