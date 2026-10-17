@@ -22,7 +22,7 @@ workflows:
           fi
           xcodegen generate
       - name: Save Apple API key
-        script: printf '%s' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$CM_BUILD_DIR/AuthKey.p8"
+        script: printf '%b\n' "$APP_STORE_CONNECT_PRIVATE_KEY" > "$CM_BUILD_DIR/AuthKey.p8"
       - name: Build and archive
         script: |
           set -e
@@ -59,6 +59,9 @@ workflows:
             -authenticationKeyPath "$CM_BUILD_DIR/AuthKey.p8" \
             -authenticationKeyID "$APP_STORE_CONNECT_KEY_IDENTIFIER" \
             -authenticationKeyIssuerID "$APP_STORE_CONNECT_ISSUER_ID"
+    artifacts:
+      - ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
     publishing:
       app_store_connect:
         # Apple credentials are passed to the build by Felapps as secret environment variables.
