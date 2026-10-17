@@ -26,7 +26,7 @@ workflows:
       - name: Build and archive
         script: |
           set -e
-          xcodebuild -project "$(ls *.xcodeproj | head -1)" \
+          xcodebuild -project "$(ls -d *.xcodeproj | head -1)" \
             -scheme FelappApp \
             -configuration Release \
             -destination 'generic/platform=iOS' \
